@@ -2,16 +2,21 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path");
 require("dotenv").config(); // Load .env
 
 const connectDB = require("./config/db"); // <- Add this line
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
+const prescriptionRoutes = require('./routes/prescription');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -26,6 +31,7 @@ connectDB(); // <- Add this line to invoke the connection
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/inventory', inventoryRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
 
 // Sample route
 app.get("/", (req, res) => {
