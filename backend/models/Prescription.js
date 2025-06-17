@@ -16,6 +16,11 @@ const prescriptionSchema = new mongoose.Schema({
   notes: String,
   agree: Boolean,
   images: [String], // file paths
+  status: {
+    type: String,
+    enum: ['pending', 'processing', 'approved', 'rejected'],
+    default: 'pending'
+  },
   createdAt: { type: Date, default: Date.now }
 });
 
