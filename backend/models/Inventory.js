@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
-const inventorySchema = new mongoose.Schema({
+// Check if the model exists before creating it
+const Inventory = mongoose.models.Inventory || mongoose.model('Inventory', new mongoose.Schema({
   name: {
     type: String,
     required: true,
@@ -29,7 +30,7 @@ const inventorySchema = new mongoose.Schema({
     enum: ['active', 'inactive'],
     default: 'active'
   },
-    prescription: {
+  prescription: {
     type: String,
     enum: ['required', 'not_required'],
     default: 'not_required'
@@ -40,6 +41,6 @@ const inventorySchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
-});
+}));
 
-module.exports = mongoose.model('Inventory', inventorySchema);
+module.exports = Inventory;
