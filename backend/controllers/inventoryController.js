@@ -19,16 +19,17 @@ exports.addInventory = async (req, res) => {
       name,
       description,
       category,
-      price,
-      stock,
+      price: Number(price),
+      stock: Number(stock),
       status: status || 'active',
-      prescription: "required" | "not_required",
+      prescription: prescription || 'not_required',
       image: image || ''
     });
 
     const savedInventory = await inventory.save();
     res.status(201).json(savedInventory);
   } catch (error) {
+    console.error('Add inventory error:', error);
     res.status(400).json({ message: error.message });
   }
 };
