@@ -8,16 +8,19 @@ const {
   deleteInventory
 } = require('../controllers/inventoryController');
 
-// Get all inventory items
-router.get('/', protect, staff, getInventory);
+// All routes require authentication
+router.use(protect);
 
-// Add new inventory item
-router.post('/', protect, admin, addInventory);
+// GET - Staff can view inventory (admin, pharmacist, doctor)
+router.get('/', staff, getInventory);
 
-// Update inventory item
-router.put('/:id', protect, admin, updateInventory);
+// POST - Only admin can add inventory
+router.post('/', admin, addInventory);
 
-// Delete inventory item
-router.delete('/:id', protect, admin, deleteInventory);
+// PUT - Only admin can update inventory
+router.put('/:id', admin, updateInventory);
+
+// DELETE - Only admin can delete inventory
+router.delete('/:id', admin, deleteInventory);
 
 module.exports = router; 
