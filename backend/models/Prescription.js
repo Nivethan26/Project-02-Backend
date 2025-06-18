@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
-const prescriptionSchema = new mongoose.Schema({
+// Check if the model exists before creating it
+const Prescription = mongoose.models.Prescription || mongoose.model('Prescription', new mongoose.Schema({
   name: String,
   email: String,
   phone: String,
@@ -22,7 +23,7 @@ const prescriptionSchema = new mongoose.Schema({
     default: 'pending'
   },
   createdAt: { type: Date, default: Date.now }
-});
+}));
 
-module.exports = mongoose.model('Prescription', prescriptionSchema);
+module.exports = Prescription;
 

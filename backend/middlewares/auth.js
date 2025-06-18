@@ -38,4 +38,12 @@ const admin = (req, res, next) => {
   }
 };
 
-module.exports = { protect, admin };
+const staff = (req, res, next) => {
+  if (req.user && ['admin', 'pharmacist', 'doctor'].includes(req.user.role)) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Not authorized as staff' });
+  }
+};
+
+module.exports = { protect, admin, staff };
