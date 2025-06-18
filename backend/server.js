@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const prescriptionRoutes = require('./routes/prescription');
+const orderRoutes = require('./routes/orderRoutes');
 
 const app = express();
 app.use(cors());
@@ -31,7 +32,9 @@ connectDB(); // <- Add this line to invoke the connection
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/inventory', inventoryRoutes);
+app.use('/api/staff/inventory', inventoryRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Sample route
 app.get("/", (req, res) => {
