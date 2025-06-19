@@ -22,16 +22,16 @@ exports.addInventory = async (req, res) => {
     const { name, description, category, price, stock, status, prescription, image } = req.body;
 
     // Validate required fields
-    if (!name || !description || !category || !price || !stock) {
-      console.log('Missing required fields:', { name, description, category, price, stock });
+    if (!name || !category || !price || !stock) {
+      console.log('Missing required fields:', { name, category, price, stock });
       return res.status(400).json({ 
-        message: 'Missing required fields: name, description, category, price, stock' 
+        message: 'Missing required fields: name, category, price, stock' 
       });
     }
 
     const inventoryData = {
       name: name.trim(),
-      description: description.trim(),
+      description: description ? description.trim() : '',
       category: category.trim(),
       price: Number(price),
       stock: Number(stock),
