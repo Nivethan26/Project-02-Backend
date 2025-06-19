@@ -5,7 +5,9 @@ const {
   register,
   login,
   getProfile,
-  staffLogin
+  staffLogin,
+  getCart,
+  updateCart
 } = require('../controllers/authController');
 
 // Public routes
@@ -15,5 +17,9 @@ router.post('/login', login);
 // Protected routes
 router.get('/profile', protect, getProfile);
 router.post('/staff-login', protect, admin, staffLogin);
+
+// Cart routes
+router.get('/cart', protect, getCart);
+router.post('/cart', protect, updateCart);
 
 module.exports = router;
