@@ -22,6 +22,10 @@ const Prescription = mongoose.models.Prescription || mongoose.model('Prescriptio
     enum: ['pending', 'processing', 'approved', 'rejected'],
     default: 'pending'
   },
+  rejectionReason: {
+    type: String,
+    default: ''
+  },
   createdAt: { type: Date, default: Date.now }
 }));
 

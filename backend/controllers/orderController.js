@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Inventory = require('../models/Inventory');
 const Prescription = require('../models/Prescription');
+const { sendOrderProcessingEmail } = require('../services/emailService');
 
 // Create a POS order (direct sale without prescription)
 exports.createPOSOrder = async (req, res) => {
@@ -280,6 +281,19 @@ exports.createOrder = async (req, res) => {
     console.log('Order data JSON:', JSON.stringify(orderData, null, 2));
 
     const order = await Order.create(orderData);
+
+    // Send order processing email to user
+    if (prescription.email) {
+      try {
+        await sendOrderProcessingEmail(
+          prescription.email,
+          prescription.name || 'Customer',
+          order._id
+        );
+      } catch (emailErr) {
+        console.error('Failed to send order processing email:', emailErr);
+      }
+    }
 
     console.log('Order created successfully:', order._id);
 
