@@ -26,6 +26,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const prescriptionRoutes = require('./routes/prescription');
 const orderRoutes = require('./routes/orderRoutes');
+const productRoutes = require('./routes/productRoutes');
 
 const app = express();
 app.use(cors());
@@ -52,6 +53,7 @@ app.use('/api/staff/inventory', inventoryRoutes);  // Staff inventory view acces
 app.use('/api/staff/orders', orderRoutes);  // Staff order operations (including POS)
 app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/products', productRoutes);  // Public product routes
 
 // Simple test endpoint
 app.get('/api/test', (req, res) => {

@@ -9,7 +9,7 @@ const Inventory = mongoose.models.Inventory || mongoose.model('Inventory', new m
   },
   description: {
     type: String,
-    required: true
+    default: ''
   },
   category: {
     type: String,
