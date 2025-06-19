@@ -3,6 +3,7 @@ const multer = require('multer');
 const Prescription = require('../models/Prescription');
 const path = require('path');
 const fs = require('fs');
+const { sendOTPEmail, sendPrescriptionRejectionEmail } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -50,6 +51,7 @@ router.put('/:id/verify', async (req, res) => {
       return res.status(404).json({ error: 'Prescription not found' });
     }
     prescription.status = 'processing';
+    prescription.rejectionReason = '';
     await prescription.save();
     res.json({ message: 'Prescription is being processed', prescription });
   } catch (err) {
@@ -68,6 +70,7 @@ router.put('/:id/approve', async (req, res) => {
       return res.status(400).json({ error: 'Prescription must be in processing state to be approved' });
     }
     prescription.status = 'approved';
+    prescription.rejectionReason = '';
     await prescription.save();
     res.json({ message: 'Prescription approved', prescription });
   } catch (err) {
@@ -86,7 +89,22 @@ router.put('/:id/reject', async (req, res) => {
       return res.status(400).json({ error: 'Prescription must be in processing state to be rejected' });
     }
     prescription.status = 'rejected';
+    prescription.rejectionReason = req.body.rejectionReason || '';
     await prescription.save();
+
+    // Send rejection email
+    if (prescription.email) {
+      try {
+        await sendPrescriptionRejectionEmail(
+          prescription.email,
+          prescription.name || 'Customer',
+          prescription.rejectionReason
+        );
+      } catch (emailErr) {
+        console.error('Failed to send rejection email:', emailErr);
+      }
+    }
+
     res.json({ message: 'Prescription rejected', prescription });
   } catch (err) {
     res.status(500).json({ error: err.message });

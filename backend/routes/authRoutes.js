@@ -7,7 +7,10 @@ const {
   getProfile,
   staffLogin,
   getCart,
-  updateCart
+  updateCart,
+  forgotPassword,
+  verifyOTP,
+  resetPassword
 } = require('../controllers/authController');
 
 // Public routes
@@ -21,5 +24,10 @@ router.post('/staff-login', protect, admin, staffLogin);
 // Cart routes
 router.get('/cart', protect, getCart);
 router.post('/cart', protect, updateCart);
+
+// Forgot password/OTP routes
+router.post('/forgot-password', forgotPassword);
+router.post('/verify-otp', verifyOTP);
+router.post('/reset-password', resetPassword);
 
 module.exports = router;
