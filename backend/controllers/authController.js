@@ -177,3 +177,39 @@ exports.staffLogin = async (req, res) => {
     res.status(500).json({ message: 'Server error during staff login' });
   }
 };
+
+// @desc    Get current user's cart
+// @route   GET /api/auth/cart
+// @access  Private
+exports.getCart = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate('cart.product');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user.cart);
+  } catch (error) {
+    console.error('Get cart error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Update current user's cart
+// @route   POST /api/auth/cart
+// @access  Private
+exports.updateCart = async (req, res) => {
+  try {
+    const { cart } = req.body; // [{product, quantity}]
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    user.cart = cart;
+    await user.save();
+    const populatedUser = await User.findById(req.user.id).populate('cart.product');
+    res.json(populatedUser.cart);
+  } catch (error) {
+    console.error('Update cart error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
