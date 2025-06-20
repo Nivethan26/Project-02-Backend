@@ -201,18 +201,29 @@ exports.getCart = async (req, res) => {
 // @access  Private
 exports.updateCart = async (req, res) => {
   try {
-    const { cart } = req.body; // [{product, quantity}]
+    const { cart } = req.body; 
+
+    if (!Array.isArray(cart)) {
+      return res.status(400).json({ message: 'Cart must be an array' });
+    }
+
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    user.cart = cart;
+    
+    // Validate and format cart items
+    user.cart = cart.map(item => ({
+      product: item.product,
+      quantity: item.quantity
+    }));
+    
     await user.save();
     const populatedUser = await User.findById(req.user.id).populate('cart.product');
     res.json(populatedUser.cart);
   } catch (error) {
-    console.error('Update cart error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Update cart error:', error.message);
+    res.status(500).json({ message: 'Server error', details: error.message });
   }
 };
 
