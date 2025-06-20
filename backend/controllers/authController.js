@@ -272,3 +272,71 @@ exports.resetPassword = async (req, res) => {
   await user.save();
   res.json({ message: 'Password reset successful' });
 };
+
+// @desc    Update current user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+exports.updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    // Only allow updating these fields
+    const { firstName, lastName, email, phone, address } = req.body;
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+    if (address) user.address = address;
+    await user.save();
+    const updatedUser = await User.findById(req.user.id).select('-password');
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Change current user password
+// @route   PUT /api/auth/change-password
+// @access  Private
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Both current and new password are required.' });
+    }
+    const user = await User.findById(req.user.id).select('+password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect.' });
+    }
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+    res.json({ message: 'Password changed successfully.' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Delete current user profile
+// @route   DELETE /api/auth/profile
+// @access  Private
+exports.deleteProfile = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'Account deleted successfully.' });
+  } catch (error) {
+    console.error('Delete profile error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
