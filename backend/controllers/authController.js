@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { sendOTPEmail } = require('../services/emailService');
+const crypto = require('crypto');
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -212,4 +214,50 @@ exports.updateCart = async (req, res) => {
     console.error('Update cart error:', error);
     res.status(500).json({ message: 'Server error' });
   }
+};
+
+// @desc    Forgot Password - Send OTP
+// @route   POST /api/auth/forgot-password
+// @access  Public
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  user.resetOTP = otp;
+  user.resetOTPExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+  await user.save();
+  await sendOTPEmail(email, otp);
+  res.json({ message: 'OTP sent to your email' });
+};
+
+// @desc    Verify OTP
+// @route   POST /api/auth/verify-otp
+// @access  Public
+exports.verifyOTP = async (req, res) => {
+  const { email, otp } = req.body;
+  const user = await User.findOne({ email });
+  if (!user || user.resetOTP !== otp || !user.resetOTPExpiry || user.resetOTPExpiry < Date.now()) {
+    return res.status(400).json({ message: 'Invalid or expired OTP' });
+  }
+  res.json({ message: 'OTP verified' });
+};
+
+// @desc    Reset Password
+// @route   POST /api/auth/reset-password
+// @access  Public
+exports.resetPassword = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  const user = await User.findOne({ email });
+  if (!user || user.resetOTP !== otp || !user.resetOTPExpiry || user.resetOTPExpiry < Date.now()) {
+    return res.status(400).json({ message: 'Invalid or expired OTP' });
+  }
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(newPassword, salt);
+  user.resetOTP = null;
+  user.resetOTPExpiry = null;
+  await user.save();
+  res.json({ message: 'Password reset successful' });
 };
