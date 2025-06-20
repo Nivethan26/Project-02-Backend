@@ -27,6 +27,7 @@ const inventoryRoutes = require('./routes/inventoryRoutes');
 const prescriptionRoutes = require('./routes/prescription');
 const orderRoutes = require('./routes/orderRoutes');
 const productRoutes = require('./routes/productRoutes');
+const doctorRoutes = require('./routes/doctorRoutes');
 
 const app = express();
 app.use(cors());
@@ -54,6 +55,7 @@ app.use('/api/staff/orders', orderRoutes);  // Staff order operations (including
 app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);  // Public product routes
+app.use('/api/doctor', doctorRoutes);
 
 // Simple test endpoint
 app.get('/api/test', (req, res) => {
