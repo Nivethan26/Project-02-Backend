@@ -13,83 +13,90 @@ exports.getInventory = async (req, res) => {
   }
 };
 
-// Add new inventory item
-exports.addInventory = async (req, res) => {
+// Add a new inventory item
+exports.addInventoryItem = async (req, res) => {
   try {
-    console.log('Adding new inventory item...');
-    console.log('Request body:', req.body);
+    const { name, description, price, packPrice, stock, category, brand, packSize, tags, status, prescription } = req.body;
     
-    const { name, description, category, price, stock, status, prescription, image } = req.body;
-
-    // Validate required fields
-    if (!name || !description || !category || !price || !stock) {
-      console.log('Missing required fields:', { name, description, category, price, stock });
-      return res.status(400).json({ 
-        message: 'Missing required fields: name, description, category, price, stock' 
-      });
+    let imagePaths = [];
+    if (req.files && req.files.length > 0) {
+      imagePaths = req.files.map(file => file.filename);
     }
 
-    const inventoryData = {
-      name: name.trim(),
-      description: description.trim(),
-      category: category.trim(),
-      price: Number(price),
-      stock: Number(stock),
-      status: status || 'active',
-      prescription: prescription || 'not_required',
-      image: image || ''
-    };
+    const newItem = new Inventory({
+      name,
+      description,
+      price,
+      packPrice,
+      stock,
+      category,
+      brand,
+      packSize,
+      tags: Array.isArray(tags) ? tags : (tags ? tags.split(',').map(tag => tag.trim()) : []),
+      images: imagePaths,
+      status,
+      prescription
+    });
 
-    console.log('Creating inventory with data:', inventoryData);
-
-    const inventory = new Inventory(inventoryData);
-    const savedInventory = await inventory.save();
-    
-    console.log('Inventory item saved successfully:', savedInventory._id);
-    res.status(201).json(savedInventory);
+    await newItem.save();
+    res.status(201).json(newItem);
   } catch (error) {
-    console.error('Add inventory error:', error);
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: error.message });
-    }
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(400).json({ message: 'Error adding inventory item', error: error.message });
   }
 };
 
-// Update inventory item
-exports.updateInventory = async (req, res) => {
+exports.updateInventoryItem = async (req, res) => {
   try {
-    console.log('Updating inventory item...');
-    console.log('Item ID:', req.params.id);
-    console.log('Request body:', req.body);
+    const { name, description, price, packPrice, stock, category, brand, packSize, tags, status, prescription } = req.body;
     
-    const { name, description, category, price, stock, status, prescription, image } = req.body;
-    
-    const inventory = await Inventory.findById(req.params.id);
-    if (!inventory) {
-      console.log('Inventory item not found:', req.params.id);
-      return res.status(404).json({ message: 'Inventory item not found' });
+    const item = await Inventory.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
     }
 
-    // Update fields if provided
-    if (name !== undefined) inventory.name = name.trim();
-    if (description !== undefined) inventory.description = description.trim();
-    if (category !== undefined) inventory.category = category.trim();
-    if (price !== undefined) inventory.price = Number(price);
-    if (stock !== undefined) inventory.stock = Number(stock);
-    if (status !== undefined) inventory.status = status;
-    if (prescription !== undefined) inventory.prescription = prescription;
-    if (image !== undefined) inventory.image = image;
+    // On-the-fly migration for legacy 'image' field
+    if (item.image) {
+      item.images = item.images || [];
+      if (!item.images.includes(item.image)) {
+        item.images.push(item.image);
+      }
+      item.image = undefined;
+    }
 
-    const updatedInventory = await inventory.save();
-    console.log('Inventory item updated successfully:', updatedInventory._id);
-    res.json(updatedInventory);
+    item.name = name || item.name;
+    item.description = description || item.description;
+    item.price = price || item.price;
+    item.packPrice = packPrice || item.packPrice;
+    item.stock = stock || item.stock;
+    item.category = category || item.category;
+    item.brand = brand || item.brand;
+    item.packSize = packSize || item.packSize;
+    item.status = status || item.status;
+    item.prescription = prescription || item.prescription;
+    
+    if (tags) {
+      item.tags = Array.isArray(tags) ? tags : tags.split(',').map(tag => tag.trim());
+    }
+    
+    // Handle multiple new images
+    if (req.files && req.files.length > 0) {
+      const newImagePaths = req.files.map(file => file.filename);
+      item.images = [...(item.images || []), ...newImagePaths];
+    } else if (req.body.images) {
+      // Handle when images are passed as stringified array or array
+      try {
+        const parsedImages = JSON.parse(req.body.images);
+        item.images = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
+      } catch (e) {
+        item.images = req.body.images;
+      }
+    }
+
+    const updatedItem = await item.save();
+    res.json(updatedItem);
+
   } catch (error) {
-    console.error('Update inventory error:', error);
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: error.message });
-    }
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(400).json({ message: 'Error updating inventory item', error: error.message });
   }
 };
 

@@ -48,6 +48,12 @@ const userSchema = new mongoose.Schema({
     enum: ['active', 'inactive'],
     default: 'active'
   },
+  cart: [
+    {
+      product: { type: mongoose.Schema.Types.ObjectId, ref: 'Inventory' },
+      quantity: { type: Number, default: 1 }
+    }
+  ],
   createdAt: {
     type: Date,
     default: Date.now
@@ -59,6 +65,14 @@ const userSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
+  },
+  resetOTP: {
+    type: String,
+    default: null
+  },
+  resetOTPExpiry: {
+    type: Date,
+    default: null
   }
 });
 
