@@ -1,22 +1,22 @@
-// const multer = require('multer');
-// const path = require('path');
-// const fs = require('fs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
-// // Ensure uploads/products directory exists
-// const uploadDir = path.join(__dirname, '..', 'uploads', 'products');
-// if (!fs.existsSync(uploadDir)) {
-//   fs.mkdirSync(uploadDir, { recursive: true });
-// }
+// Ensure uploads/staff directory exists
+const uploadDir = path.join(__dirname, '..', 'uploads', 'staff');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
-// const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     cb(null, 'uploads/products/');
-//   },
-//   filename: function (req, file, cb) {
-//     cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`);
-//   }
-// });
+const staffStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/staff/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`);
+  }
+});
 
-// const upload = multer({ storage: storage });
+const staffUpload = multer({ storage: staffStorage });
 
-// module.exports = upload;
+module.exports = { staffUpload };

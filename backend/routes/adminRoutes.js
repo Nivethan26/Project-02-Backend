@@ -10,6 +10,7 @@ const {
   updateUserStatus,
   deleteUser
 } = require('../controllers/adminController');
+const { staffUpload } = require('../middlewares/upload');
 
 // All routes are protected and require admin role
 router.use(protect);
@@ -26,11 +27,11 @@ router.delete('/users/:id', deleteUser);
 
 // Staff management routes
 router.route('/staff')
-  .post(createStaffMember)
+  .post(staffUpload.single('profilePhoto'), createStaffMember)
   .get(getStaffMembers);
 
 router.route('/staff/:id')
-  .put(updateStaffMember)
+  .put(staffUpload.single('profilePhoto'), updateStaffMember)
   .delete(deleteStaffMember);
 
 module.exports = router;
