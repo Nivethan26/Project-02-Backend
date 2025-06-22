@@ -11,19 +11,38 @@ const Inventory = mongoose.models.Inventory || mongoose.model('Inventory', new m
     type: String,
     default: ''
   },
-  category: {
-    type: String,
-    required: true
-  },
   price: {
     type: Number,
     required: true,
     min: 0
   },
+  packPrice: {
+    type: Number
+  },
   stock: {
     type: Number,
     required: true,
     min: 0
+  },
+  category: {
+    type: String,
+    required: true
+  },
+  brand: {
+    type: String,
+    default: ''
+  },
+  packSize: {
+    type: String,
+    default: ''
+  },
+  tags: {
+    type: [String],
+    default: []
+  },
+  images: {
+    type: [String],
+    default: []
   },
   status: {
     type: String,
@@ -35,9 +54,9 @@ const Inventory = mongoose.models.Inventory || mongoose.model('Inventory', new m
     enum: ['required', 'not_required'],
     default: 'not_required'
   },
-  image: {
-    type: String,
-    default: ''
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true
