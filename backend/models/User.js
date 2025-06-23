@@ -73,6 +73,14 @@ const userSchema = new mongoose.Schema({
   resetOTPExpiry: {
     type: Date,
     default: null
+  },
+  profilePhoto: {
+    type: String,
+    default: null
+  },
+  speciality: {
+    type: String,
+    default: null
   }
 });
 
