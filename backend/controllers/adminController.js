@@ -6,34 +6,38 @@ const bcrypt = require('bcryptjs');
 // @access  Private/Admin
 exports.createStaffMember = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, phone, address, role } = req.body;
-
+    const { firstName, lastName, email, password, phone, address, role, speciality } = req.body;
+    let profilePhoto = null;
+    if (req.file) {
+      profilePhoto = req.file.path.replace(/\\/g, '/');
+    }
     // Validate role
     if (!['pharmacist', 'doctor', 'delivery'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role specified' });
     }
-
     // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
-
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
     // Create new staff member
-    const user = await User.create({
+    const userData = {
       firstName,
       lastName,
       email,
       password: hashedPassword,
       phone,
       address,
-      role
-    });
-
+      role,
+      profilePhoto
+    };
+    if (role === 'doctor' && speciality) {
+      userData.speciality = speciality;
+    }
+    const user = await User.create(userData);
     res.status(201).json({
       message: 'Staff member created successfully',
       user: {
@@ -41,7 +45,9 @@ exports.createStaffMember = async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role
+        role: user.role,
+        profilePhoto: user.profilePhoto,
+        speciality: user.speciality
       }
     });
   } catch (error) {
@@ -94,27 +100,33 @@ exports.deleteStaffMember = async (req, res) => {
 // @access  Private/Admin
 exports.updateStaffMember = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, address, role } = req.body;
-
+    const { firstName, lastName, email, phone, address, role, speciality } = req.body;
+    let profilePhoto = null;
+    if (req.file) {
+      profilePhoto = req.file.path.replace(/\\/g, '/');
+    }
     const user = await User.findById(req.params.id);
-
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     if (!['pharmacist', 'doctor', 'delivery'].includes(user.role)) {
       return res.status(400).json({ message: 'Can only update staff members' });
     }
-
     user.firstName = firstName || user.firstName;
     user.lastName = lastName || user.lastName;
     user.email = email || user.email;
     user.phone = phone || user.phone;
     user.address = address || user.address;
     user.role = role || user.role;
-
+    if (profilePhoto) {
+      user.profilePhoto = profilePhoto;
+    }
+    if (role === 'doctor') {
+      user.speciality = speciality || user.speciality;
+    } else {
+      user.speciality = null;
+    }
     const updatedUser = await user.save();
-
     res.json({
       message: 'Staff member updated successfully',
       user: {
@@ -122,7 +134,9 @@ exports.updateStaffMember = async (req, res) => {
         email: updatedUser.email,
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
-        role: updatedUser.role
+        role: updatedUser.role,
+        profilePhoto: updatedUser.profilePhoto,
+        speciality: updatedUser.speciality
       }
     });
   } catch (error) {
