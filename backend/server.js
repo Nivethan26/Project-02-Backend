@@ -66,7 +66,7 @@ app.use("/api/admin/inventory", inventoryRoutes); // Admin inventory CRUD operat
 app.use("/api/staff/inventory", inventoryRoutes); // Staff inventory view access
 app.use("/api/staff/orders", orderRoutes); // Staff order operations (including POS)
 app.use("/api/prescriptions", prescriptionRoutes);
-app.use("/api/orders", orderRoutes);
+app.use("/api/orders", orderRoutes); // Main orders API
 app.use("/api/products", productRoutes); // Public product routes
 app.use("/api/doctor", doctorRoutes);
 
