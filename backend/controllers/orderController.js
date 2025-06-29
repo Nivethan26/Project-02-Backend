@@ -807,3 +807,150 @@ exports.checkDataIntegrity = async (req, res) => {
     });
   }
 };
+
+// Get all orders by status (for delivery dashboard)
+exports.getOrdersByStatus = async (req, res) => {
+  try {
+    let { status } = req.query;
+    let query = {};
+    if (status) {
+      // Support comma-separated status values
+      const statusArray = status.split(',').map(s => s.trim());
+      query.status = { $in: statusArray };
+    } else {
+      // Exclude completed by default
+      query.status = { $ne: 'completed' };
+    }
+    const orders = await Order.find(query)
+      .sort({ createdAt: -1 })
+      .lean();
+    const transformedOrders = orders.map((order) => ({
+      id: order._id,
+      orderNumber: order.orderNumber,
+      name: order.customer?.name || '',
+      address: `${order.customer?.address || ''} ${order.customer?.city || ''}`.trim(),
+      phone: order.customer?.phone || '',
+      status: order.status,
+    }));
+    res.status(200).json({ success: true, data: transformedOrders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching orders by status', error: error.message });
+  }
+};
+
+// Update order status by ID (for delivery dashboard)
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ success: false, message: 'Status is required' });
+    }
+    const allowedStatuses = ['pending', 'delivered', 'processing', 'shipped', 'cancelled', 'completed'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status value' });
+    }
+    const order = await Order.findByIdAndUpdate(orderId, { status }, { new: true });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    res.status(200).json({ success: true, data: { id: order._id, status: order.status } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating order status', error: error.message });
+  }
+};
+
+// Get all orders for admin dashboard
+exports.getAllOrders = async (req, res) => {
+  try {
+    const { status, search, page = 1, limit = 20 } = req.query;
+    
+    // Build query
+    let query = {};
+    
+    // Exclude POS sales orders from admin dashboard
+    query.orderType = { $ne: 'pos_sale' };
+    
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+    
+    if (search) {
+      query.$or = [
+        { orderNumber: { $regex: search, $options: 'i' } },
+        { 'customer.name': { $regex: search, $options: 'i' } },
+        { 'customer.email': { $regex: search, $options: 'i' } },
+        { 'customer.phone': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Get orders with populated product details
+    const orders = await Order.find(query)
+      .populate({
+        path: "items.product",
+        select: "name description price image stock category",
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    // Get total count for pagination
+    const totalOrders = await Order.countDocuments(query);
+
+    // Transform orders for admin view
+    const transformedOrders = orders.map((order) => ({
+      id: order._id,
+      orderNumber: order.orderNumber,
+      customerName: order.customer?.name || 'Unknown Customer',
+      customerEmail: order.customer?.email || '',
+      customerPhone: order.customer?.phone || '',
+      customerAddress: `${order.customer?.address || ''} ${order.customer?.city || ''}`.trim(),
+      date: order.createdAt,
+      total: order.totalAmount,
+      subtotal: order.subtotal || order.totalAmount,
+      shipping: order.shipping || 0,
+      tax: order.tax || 0,
+      status: order.status,
+      items: order.items.map((item) => ({
+        id: item.product?._id || item.product,
+        name: item.product?.name || 'Product not available',
+        price: item.price,
+        quantity: item.quantity,
+        image: item.product?.image || null,
+        category: item.product?.category || 'Unknown'
+      })),
+      itemsCount: order.items.length,
+      paymentMethod: order.paymentMethod,
+      orderType: order.orderType || 'online',
+      description: order.description || '',
+      trackingNumber: order.trackingNumber || '',
+      estimatedDelivery: order.estimatedDelivery || null
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Orders retrieved successfully",
+      data: {
+        orders: transformedOrders,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalOrders / parseInt(limit)),
+          totalOrders,
+          hasNextPage: skip + transformedOrders.length < totalOrders,
+          hasPrevPage: parseInt(page) > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching all orders:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching orders",
+      error: error.message
+    });
+  }
+};

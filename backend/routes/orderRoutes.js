@@ -10,6 +10,9 @@ const {
   getOrderById,
   getAvailableProducts,
   checkDataIntegrity,
+  getOrdersByStatus,
+  updateOrderStatus,
+  getAllOrders,
 } = require("../controllers/orderController");
 const Order = require("../models/Order");
 
@@ -74,6 +77,12 @@ router.get("/debug/integrity", checkDataIntegrity);
 // Get customer orders (public endpoint - no auth required)
 router.get("/customer", getCustomerOrders);
 
+// Get all orders for admin dashboard (protected route)
+router.get("/admin/all", protect, staff, getAllOrders);
+
+// Get all orders by status (for delivery dashboard)
+router.get("/", getOrdersByStatus);
+
 // Get specific order by ID (public endpoint - no auth required)
 router.get("/:orderId", getOrderById);
 
@@ -85,5 +94,8 @@ router.post("/pos", protect, staff, createPOSOrder);
 
 // Create order (prescription-based)
 router.post("/", protect, staff, createOrder);
+
+// Update order status by ID (for delivery dashboard)
+router.patch("/:orderId/status", updateOrderStatus);
 
 module.exports = router;
