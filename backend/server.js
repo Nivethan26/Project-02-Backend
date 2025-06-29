@@ -29,6 +29,7 @@ const prescriptionRoutes = require("./routes/prescription");
 const orderRoutes = require("./routes/orderRoutes");
 const productRoutes = require("./routes/productRoutes");
 const doctorRoutes = require("./routes/doctorRoutes");
+const contactRoutes = require('./routes/contactRoutes');
 
 const app = express();
 app.use(cors());
@@ -69,6 +70,8 @@ app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/orders", orderRoutes); // Main orders API
 app.use("/api/products", productRoutes); // Public product routes
 app.use("/api/doctor", doctorRoutes);
+app.use('/api/contact', contactRoutes);
+
 
 // Simple test endpoint
 app.get("/api/test", (req, res) => {
