@@ -121,6 +121,14 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Add Counter model for atomic order number generation
+const counterSchema = new mongoose.Schema({
+  _id: String,
+  seq: Number
+});
+const Counter = mongoose.models.Counter || mongoose.model('Counter', counterSchema);
+
 // Pre-save middleware to generate order number
 orderSchema.pre("save", async function (next) {
   try {
@@ -129,34 +137,21 @@ orderSchema.pre("save", async function (next) {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
-
-      // Get count of orders for today
-      const todayStart = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate()
+      const counterId = `order-${year}${month}${day}`;
+      const counter = await Counter.findByIdAndUpdate(
+        counterId,
+        { $inc: { seq: 1 } },
+        { upsert: true, new: true }
       );
-      const todayEnd = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate() + 1
-      );
-
-      const orderCount = await this.constructor.countDocuments({
-        createdAt: { $gte: todayStart, $lt: todayEnd },
-      });
-
-      const sequence = String(orderCount + 1).padStart(3, "0");
+      const sequence = String(counter.seq).padStart(3, "0");
       this.orderNumber = `ORD-${year}${month}${day}-${sequence}`;
     }
-
     // Set estimated delivery to 2-3 business days from now
     if (this.isNew && !this.estimatedDelivery) {
       const deliveryDate = new Date();
       deliveryDate.setDate(deliveryDate.getDate() + 3); // 3 days from now
       this.estimatedDelivery = deliveryDate;
     }
-
     next();
   } catch (error) {
     console.error("Error in pre-save middleware:", error);
