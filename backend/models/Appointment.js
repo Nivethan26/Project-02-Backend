@@ -7,7 +7,6 @@ const appointmentSchema = new mongoose.Schema({
   time: { type: String, required: true },
   status: { type: String, default: 'confirmed' },
   notes: { type: String, default: '' },
-  paymentIntentId: { type: String }, // remove unique: true
   createdAt: { type: Date, default: Date.now }
 });
 
