@@ -30,9 +30,17 @@ const orderRoutes = require("./routes/orderRoutes");
 const productRoutes = require("./routes/productRoutes");
 const doctorRoutes = require("./routes/doctorRoutes");
 const contactRoutes = require('./routes/contactRoutes');
+const consultationRoutes = require('./routes/consultationRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
+
+
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000", // your frontend
+  credentials: true,
+}));
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
@@ -71,6 +79,8 @@ app.use("/api/orders", orderRoutes); // Main orders API
 app.use("/api/products", productRoutes); // Public product routes
 app.use("/api/doctor", doctorRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/consultation', consultationRoutes);
+app.use('/api/appointment', appointmentRoutes);
 
 
 // Simple test endpoint
