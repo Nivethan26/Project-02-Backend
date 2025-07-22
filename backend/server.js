@@ -30,6 +30,8 @@ const orderRoutes = require("./routes/orderRoutes");
 const productRoutes = require("./routes/productRoutes");
 const doctorRoutes = require("./routes/doctorRoutes");
 const contactRoutes = require('./routes/contactRoutes');
+const consultationRoutes = require('./routes/consultationRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
 const reminderRoutes = require('./routes/reminderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 
