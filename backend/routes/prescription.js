@@ -4,6 +4,8 @@ const Prescription = require('../models/Prescription');
 const path = require('path');
 const fs = require('fs');
 const { sendOTPEmail, sendPrescriptionRejectionEmail } = require('../services/emailService');
+const Order = require('../models/Order');
+const User = require('../models/User');
 
 const router = express.Router();
 
@@ -35,8 +37,14 @@ router.get('/', async (req, res) => {
 router.post('/', upload.array('prescription', 5), async (req, res) => {
   try {
     const images = req.files.map(f => `/uploads/prescriptions/${path.basename(f.path)}`);
-    const prescription = new Prescription({ ...req.body, images });
+    const prescriptionData = { ...req.body, images };
+    if (req.body.customerId) {
+      prescriptionData.customerId = req.body.customerId;
+    }
+    console.log('Received prescription upload:', req.body);
+    const prescription = new Prescription(prescriptionData);
     await prescription.save();
+    console.log('Saved prescription:', prescription);
     res.status(201).json({ message: 'Prescription uploaded!', prescription });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -72,6 +80,40 @@ router.put('/:id/approve', async (req, res) => {
     prescription.status = 'approved';
     prescription.rejectionReason = '';
     await prescription.save();
+
+    // Create an order if not already created for this prescription
+    const existingOrder = await Order.findOne({ prescription: prescription._id });
+    if (!existingOrder) {
+      let customerId = prescription.customerId;
+      // If customerId is not present, try to look up by email
+      if (!customerId && prescription.email) {
+        const user = await User.findOne({ email: prescription.email });
+        if (user) {
+          customerId = user._id;
+        }
+      }
+      const orderData = {
+        prescription: prescription._id,
+        customer: {
+          name: prescription.name,
+          email: prescription.email,
+          phone: prescription.phone,
+          address: prescription.address,
+          city: prescription.city,
+        },
+        customerId: customerId || undefined,
+        items: [], // You may want to fill this with actual products if available
+        totalAmount: 0, // Set to actual total if you have it
+        paymentMethod: prescription.payment || 'N/A',
+        orderType: 'prescription',
+        description: `Order for prescription ${prescription.name || ''}`,
+        createdBy: prescription.createdBy || null
+      };
+      console.log('Order data JSON:', JSON.stringify(orderData, null, 2));
+      const order = new Order(orderData);
+      await order.save();
+    }
+
     res.json({ message: 'Prescription approved', prescription });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -142,6 +184,23 @@ router.get('/customer/:email', async (req, res) => {
     const prescriptions = await Prescription.find({ email: req.params.email })
       .sort({ createdAt: -1 });
     res.json(prescriptions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get prescriptions for a specific customer (by customerId, email, phone, and optionally orderType)
+router.get('/customer', async (req, res) => {
+  try {
+    const { customerId, email, phone, orderType } = req.query;
+    const query = {};
+    if (customerId) query.customerId = customerId;
+    if (!customerId && email) query.email = email;
+    if (phone) query.phone = phone;
+    if (orderType) query.orderType = orderType;
+    console.log('Prescription query:', query);
+    const prescriptions = await Prescription.find(query).sort({ createdAt: -1 });
+    res.json({ data: prescriptions });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
