@@ -37,7 +37,7 @@ exports.getCustomerAppointments = async (req, res) => {
 // ✅ Create appointment (e.g. after payment)
 exports.createAppointment = async (req, res) => {
   try {
-    const { doctorId, date, time, notes, paymentIntentId } = req.body;
+    const { doctorId, date, time, notes, paymentId } = req.body; // 🔄 Changed from paymentIntentId
 
     const newAppointment = await Appointment.create({
       customer: req.user.id,
@@ -45,7 +45,7 @@ exports.createAppointment = async (req, res) => {
       date,
       time,
       notes: notes || '',
-      paymentIntentId,
+      paymentId, // ✅ Correct field name
       status: 'confirmed',
     });
 

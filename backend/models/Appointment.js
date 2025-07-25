@@ -7,6 +7,7 @@ const appointmentSchema = new mongoose.Schema({
   time: { type: String, required: true },
   status: { type: String, default: 'confirmed' },
   notes: { type: String, default: '' },
+  paymentId: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 
