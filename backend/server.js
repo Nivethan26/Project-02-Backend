@@ -34,6 +34,7 @@ const consultationRoutes = require('./routes/consultationRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const reminderRoutes = require('./routes/reminderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const { initializeReminderScheduler } = require('./services/reminderScheduler');
 
 const app = express();
 app.use(cors({
@@ -68,6 +69,8 @@ app.use((req, res, next) => {
 // Connect to MongoDB
 connectDB();
 
+
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
@@ -83,7 +86,7 @@ app.use('/api/consultation', consultationRoutes);
 app.use('/api/appointment', appointmentRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/payments', paymentRoutes);
-
+app.get('/health', (req, res) => res.json({ ok: true }));
 
 // Simple test endpoint
 app.get("/api/test", (req, res) => {
@@ -175,4 +178,9 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log("Environment:", process.env.NODE_ENV || "development");
+  try {
+    initializeReminderScheduler();
+  } catch (err) {
+    console.error('Failed to start reminder scheduler:', err && err.message ? err.message : err);
+  }
 });
