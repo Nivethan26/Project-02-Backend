@@ -26,7 +26,8 @@ exports.setAvailability = async (req, res) => {
 
 exports.getAvailability = async (req, res) => {
   try {
-    const doctorId = req.user._id;
+    const doctorId = req.query.doctorId || req.user._id;
+    if (!doctorId) return res.status(400).json({ message: 'doctorId is required.' });
     const records = await DoctorAvailability.find({ doctor: doctorId });
     res.json(records.map(r => ({
       date: r.date,
@@ -48,20 +49,20 @@ exports.listDoctors = async (req, res) => {
     const availabilities = await DoctorAvailability.find({
       doctor: { $in: doctorIds }
     });
-    // Map doctorId to available future dates
+    // Map doctorId to available future dates and slots
     const availMap = {};
     availabilities.forEach(a => {
-      // Only include today or future dates
       if (!availMap[a.doctor]) availMap[a.doctor] = [];
       const dateObj = new Date(a.date);
       if (dateObj >= now) {
-        availMap[a.doctor].push(a.date);
+        availMap[a.doctor].push({ date: a.date, slots: a.slots });
       }
     });
-    // Attach availableDates to each doctor
+    // Attach availableDates and availableSlots to each doctor
     const result = doctors.map(doc => ({
       ...doc.toObject(),
-      availableDates: availMap[doc._id] || []
+      availableDates: (availMap[doc._id] || []).map(a => a.date),
+      availableSlots: availMap[doc._id] || []
     }));
     res.json(result);
   } catch (err) {
