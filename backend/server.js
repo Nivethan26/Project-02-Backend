@@ -33,6 +33,7 @@ const contactRoutes = require('./routes/contactRoutes');
 const consultationRoutes = require('./routes/consultationRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const reminderRoutes = require('./routes/reminderRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const { initializeReminderScheduler } = require('./services/reminderScheduler');
 
@@ -85,6 +86,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/consultation', consultationRoutes);
 app.use('/api/appointment', appointmentRoutes);
 app.use('/api/reminders', reminderRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/payments', paymentRoutes);
 app.get('/health', (req, res) => res.json({ ok: true }));
 
