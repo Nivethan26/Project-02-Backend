@@ -1,5 +1,6 @@
 const Consultation = require('../models/Consultation');
 const ConsultationPayment = require('../models/ConsultationPayment');
+const Payment = require('../models/Payment');
 const Appointment = require('../models/Appointment');
 const User = require('../models/User');
 
@@ -12,6 +13,12 @@ exports.bookConsultation = async (req, res) => {
 
     if (!user || !doctorId || !date || !time || !amount || !method) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Check if the slot is already booked for this doctor
+    const existing = await Appointment.findOne({ doctor: doctorId, date, time, status: { $ne: 'cancelled' } });
+    if (existing) {
+      return res.status(409).json({ message: 'Selected time is already booked. Please pick another slot.' });
     }
 
     // Step 1: Create payment first
@@ -37,7 +44,18 @@ exports.bookConsultation = async (req, res) => {
     payment.consultationId = consultation._id;
     await payment.save();
 
-    // Step 4: Create appointment
+    // Step 4: Also persist a generic Payment entry for reporting/consistency
+    await Payment.create({
+      consultationId: consultation._id,
+      user,
+      doctor: doctorId,
+      amount,
+      paymentMethod: method === 'card_payment' ? 'card_payment' : method || 'card',
+      paymentType: 'consultation',
+      status: 'paid'
+    });
+
+    // Step 5: Create appointment (unique index ensures atomic protection if race)
     await Appointment.create({
       customer: user,
       doctor: doctorId,
@@ -45,11 +63,15 @@ exports.bookConsultation = async (req, res) => {
       time,
       status: 'confirmed',
       notes: '',
-      paymentIntentId: payment._id.toString(),
+      paymentId: payment._id.toString(),
     });
 
     res.status(201).json({ consultation, payment });
   } catch (err) {
+    // Handle duplicate key error from unique index (doctor+date+time)
+    if (err && err.code === 11000) {
+      return res.status(409).json({ message: 'Selected time is already booked. Please choose another slot.' });
+    }
     console.error("🔥 Book consultation error:", err);
     res.status(500).json({ error: err.message });
   }
@@ -82,3 +104,30 @@ exports.getDoctorAppointments = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch appointments.' });
   }
 }; 
+
+// Admin: Get all consultation bookings (with optional filters)
+exports.getAllConsultations = async (req, res) => {
+  try {
+    const { doctorId, userId, startDate, endDate, status } = req.query;
+    const filter = {};
+    if (doctorId) filter.doctor = doctorId;
+    if (userId) filter.user = userId;
+    if (status) filter.status = status;
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) filter.createdAt.$lte = new Date(endDate);
+    }
+
+    const consultations = await Consultation.find(filter)
+      .sort({ createdAt: -1 })
+      .populate('doctor', 'firstName lastName email speciality')
+      .populate('user', 'firstName lastName email phone')
+      .populate('paymentId');
+
+    res.json({ success: true, data: consultations });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch consultation bookings.' });
+  }
+};
