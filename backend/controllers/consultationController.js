@@ -15,6 +15,12 @@ exports.bookConsultation = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    // Check if the slot is already booked for this doctor
+    const existing = await Appointment.findOne({ doctor: doctorId, date, time, status: { $ne: 'cancelled' } });
+    if (existing) {
+      return res.status(409).json({ message: 'Selected time is already booked. Please pick another slot.' });
+    }
+
     // Step 1: Create payment first
     const payment = await ConsultationPayment.create({
       user,
@@ -49,7 +55,7 @@ exports.bookConsultation = async (req, res) => {
       status: 'paid'
     });
 
-    // Step 5: Create appointment
+    // Step 5: Create appointment (unique index ensures atomic protection if race)
     await Appointment.create({
       customer: user,
       doctor: doctorId,
@@ -57,11 +63,15 @@ exports.bookConsultation = async (req, res) => {
       time,
       status: 'confirmed',
       notes: '',
-      paymentIntentId: payment._id.toString(),
+      paymentId: payment._id.toString(),
     });
 
     res.status(201).json({ consultation, payment });
   } catch (err) {
+    // Handle duplicate key error from unique index (doctor+date+time)
+    if (err && err.code === 11000) {
+      return res.status(409).json({ message: 'Selected time is already booked. Please choose another slot.' });
+    }
     console.error("🔥 Book consultation error:", err);
     res.status(500).json({ error: err.message });
   }
