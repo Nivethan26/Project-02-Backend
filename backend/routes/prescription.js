@@ -37,9 +37,18 @@ router.get('/', async (req, res) => {
 router.post('/', upload.array('prescription', 5), async (req, res) => {
   try {
     const images = req.files.map(f => `/uploads/prescriptions/${path.basename(f.path)}`);
-    const prescriptionData = { ...req.body, images };
+    let prescriptionData = { ...req.body, images };
+    // If customerId is present, fetch user details and overwrite personal info
     if (req.body.customerId) {
       prescriptionData.customerId = req.body.customerId;
+      const user = await User.findById(req.body.customerId);
+      if (user) {
+        prescriptionData.name = user.firstName + (user.lastName ? ' ' + user.lastName : '');
+        prescriptionData.email = user.email;
+        prescriptionData.phone = user.phone;
+        prescriptionData.address = user.address;
+        prescriptionData.city = user.city || '';
+      }
     }
     console.log('Received prescription upload:', req.body);
     const prescription = new Prescription(prescriptionData);
