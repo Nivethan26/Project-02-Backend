@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, admin } = require('../middlewares/auth');
+const ContactMessage = require('../models/ContactMessage');
 const {
   createStaffMember,
   getStaffMembers,
@@ -18,6 +19,27 @@ router.use(admin);
 
 // Get all users
 router.get('/users', getAllUsers);
+
+router.get('/messages', async (req, res) => {
+  try {
+    const messages = await ContactMessage.find().sort({ createdAt: -1 });
+    res.status(200).json(messages);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching messages', error: err.message });
+  }
+});
+
+router.delete('/messages/:id', async (req, res) => {
+  try {
+    const message = await ContactMessage.findByIdAndDelete(req.params.id);
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+    res.status(200).json({ message: 'Message deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting message', error: err.message });
+  }
+});
 
 // Update user status
 router.patch('/users/:id/status', updateUserStatus);

@@ -26,6 +26,15 @@ const Prescription = mongoose.models.Prescription || mongoose.model('Prescriptio
     type: String,
     default: ''
   },
+  orderType: {
+    type: String,
+    default: 'prescription'
+  },
+  customerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
   createdAt: { type: Date, default: Date.now }
 }));
 

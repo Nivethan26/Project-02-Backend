@@ -29,9 +29,20 @@ const prescriptionRoutes = require("./routes/prescription");
 const orderRoutes = require("./routes/orderRoutes");
 const productRoutes = require("./routes/productRoutes");
 const doctorRoutes = require("./routes/doctorRoutes");
+const contactRoutes = require('./routes/contactRoutes');
+const consultationRoutes = require('./routes/consultationRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
+const reminderRoutes = require('./routes/reminderRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const { initializeReminderScheduler } = require('./services/reminderScheduler');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000", // your frontend
+  credentials: true,
+}));
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
@@ -59,6 +70,8 @@ app.use((req, res, next) => {
 // Connect to MongoDB
 connectDB();
 
+
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
@@ -66,9 +79,16 @@ app.use("/api/admin/inventory", inventoryRoutes); // Admin inventory CRUD operat
 app.use("/api/staff/inventory", inventoryRoutes); // Staff inventory view access
 app.use("/api/staff/orders", orderRoutes); // Staff order operations (including POS)
 app.use("/api/prescriptions", prescriptionRoutes);
-app.use("/api/orders", orderRoutes);
+app.use("/api/orders", orderRoutes); // Main orders API
 app.use("/api/products", productRoutes); // Public product routes
 app.use("/api/doctor", doctorRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/consultation', consultationRoutes);
+app.use('/api/appointment', appointmentRoutes);
+app.use('/api/reminders', reminderRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/payments', paymentRoutes);
+app.get('/health', (req, res) => res.json({ ok: true }));
 
 // Simple test endpoint
 app.get("/api/test", (req, res) => {
@@ -160,4 +180,9 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log("Environment:", process.env.NODE_ENV || "development");
+  try {
+    initializeReminderScheduler();
+  } catch (err) {
+    console.error('Failed to start reminder scheduler:', err && err.message ? err.message : err);
+  }
 });

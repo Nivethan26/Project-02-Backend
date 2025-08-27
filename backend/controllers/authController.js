@@ -308,12 +308,17 @@ exports.updateProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
     // Only allow updating these fields
-    const { firstName, lastName, email, phone, address } = req.body;
+    const { firstName, lastName, email, phone, address, city, speciality } = req.body;
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
     if (email) user.email = email;
     if (phone) user.phone = phone;
     if (address) user.address = address;
+    if (city !== undefined) user.city = city;
+    // Allow speciality update only for doctors
+    if (speciality && user.role === 'doctor') {
+      user.speciality = speciality;
+    }
     await user.save();
     const updatedUser = await User.findById(req.user.id).select("-password");
     res.json(updatedUser);
