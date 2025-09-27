@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Phone number is required'],
     trim: true
   },
+  city: {
+    type: String,
+    trim: true
+  },
   address: {
     type: String,
     required: [true, 'Address is required'],
