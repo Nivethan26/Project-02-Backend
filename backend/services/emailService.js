@@ -1,3 +1,12 @@
+async function sendAppointmentCancellationEmail(to, patientName, doctorName, reason) {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to,
+    subject: 'Your Consultation Appointment Was Cancelled',
+    text: `Dear ${patientName},\n\nYour consultation appointment has been cancelled by Dr. ${doctorName}.\n\nReason: ${reason || 'Doctor unavailable'}\n\nYou will receive a refund for your payment.\n\nIf you have any questions, please contact us.\n\nBest regards,\nSK Medicals Team`,
+  };
+  await transporter.sendMail(mailOptions);
+}
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
@@ -98,4 +107,4 @@ async function sendReminderEmail(to, customerName, reminder, orderItems = []) {
   }
 }
 
-module.exports = { verifyTransport, sendOTPEmail, sendPrescriptionRejectionEmail, sendOrderProcessingEmail, sendReminderEmail };
+module.exports = { verifyTransport, sendOTPEmail, sendPrescriptionRejectionEmail, sendOrderProcessingEmail, sendReminderEmail, sendAppointmentCancellationEmail };
