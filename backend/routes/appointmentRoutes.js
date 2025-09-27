@@ -4,9 +4,12 @@ const {
   getDoctorAppointments,
   getCustomerAppointments,
   createAppointment,
+  cancelByDoctor
 } = require('../controllers/appointmentController'); // ✅ Correct import
 
 const verifyToken = require('../middlewares/authMiddleware'); // ✅ your custom JWT middleware
+// Doctor cancels appointment (refund + email)
+router.post('/doctor/cancel/:id', verifyToken, cancelByDoctor);
 
 // Get all appointments for the logged-in doctor
 router.get('/doctor', verifyToken, getDoctorAppointments);
