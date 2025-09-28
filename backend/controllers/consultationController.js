@@ -1,3 +1,38 @@
+// Cancel a consultation booking by ID
+exports.cancelConsultation = async (req, res) => {
+  try {
+    const consultationId = req.params.id;
+    const userId = req.user._id;
+    // Find the consultation and ensure it belongs to the user
+    const consultation = await Consultation.findOne({ _id: consultationId, user: userId });
+    if (!consultation) {
+      return res.status(404).json({ message: "Consultation not found" });
+    }
+    if (consultation.status === "cancelled") {
+      return res.status(400).json({ message: "Consultation already cancelled" });
+    }
+    // Update status to cancelled
+    consultation.status = "cancelled";
+    await consultation.save();
+    // Also cancel related appointment if exists
+    await Appointment.updateMany({ customer: userId, doctor: consultation.doctor, date: consultation.date, time: consultation.time }, { status: "cancelled" });
+
+    // Refund logic if requested
+    if (req.body && req.body.refund) {
+      // Refund ConsultationPayment
+      if (consultation.paymentId) {
+        await ConsultationPayment.updateOne({ _id: consultation.paymentId }, { status: 'refunded' });
+      }
+      // Refund generic Payment
+      await Payment.updateMany({ consultationId: consultation._id, user: userId }, { status: 'refunded' });
+      return res.json({ success: true, message: "Consultation cancelled and refunded" });
+    }
+    res.json({ success: true, message: "Consultation cancelled" });
+  } catch (err) {
+    console.error("Cancel consultation error:", err);
+    res.status(500).json({ message: "Failed to cancel consultation" });
+  }
+};
 const Consultation = require('../models/Consultation');
 const ConsultationPayment = require('../models/ConsultationPayment');
 const Payment = require('../models/Payment');

@@ -37,6 +37,8 @@ const chatbotRoutes = require('./routes/chatbotRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const { initializeReminderScheduler } = require('./services/reminderScheduler');
 
+const { verifyTransport } = require('./services/emailService');
+verifyTransport();
 const app = express();
 app.use(cors({
   origin: "http://localhost:3000", // your frontend
