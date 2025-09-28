@@ -131,6 +131,7 @@ router.patch('/:orderId/confirm', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
     order.customizationConfirmed = true;
+    order.status = 'confirmed';
     // Ensure customerId is set for prescription orders
     if (order.orderType === 'prescription' && !order.customerId && order.customer && order.customer.email) {
       const User = require('../models/User');
@@ -147,3 +148,27 @@ router.patch('/:orderId/confirm', async (req, res) => {
 });
 
 module.exports = router;
+
+// Cancel (delete) order if not confirmed
+router.delete('/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    // Allow delete only if not confirmed (customizationConfirmed is false or status is not 'confirmed')
+    if (order.customizationConfirmed || order.status === 'confirmed') {
+      return res.status(400).json({ error: 'Cannot cancel a confirmed order' });
+    }
+    // Delete associated prescription if present
+    if (order.prescription) {
+      const Prescription = require('../models/Prescription');
+      await Prescription.findByIdAndDelete(order.prescription);
+    }
+    await order.deleteOne();
+    res.json({ success: true, message: 'Order and prescription cancelled successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
